@@ -1,0 +1,20 @@
+includes:
+  - vendor/larastan/larastan/extension.neon
+
+parameters:
+  level: 9
+
+  paths:
+    - app
+    - config
+    - database
+    - routes
+
+  # Keep it strict: exclude only what we truly can't analyze
+  excludePaths:
+    - bootstrap/cache
+    - storage
+    - vendor
+
+  # Helps type inference in Laravel
+  reportUnmatchedIgnoredErrors: true

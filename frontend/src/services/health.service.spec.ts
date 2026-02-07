@@ -29,9 +29,7 @@ describe('HealthService', () => {
   it('should emit "checking" then "up" when the endpoint returns ok=true', async () => {
     // Subscribe immediately to capture the synchronous startWith(...) emission
     // before the HTTP response is flushed.
-    const emissionsPromise = firstValueFrom(
-      service.apiHealthCheck$.pipe(take(2), toArray())
-    );
+    const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
     const req = httpMock.expectOne('/api/health');
     expect(req.request.method).toBe('GET');
@@ -49,9 +47,7 @@ describe('HealthService', () => {
   it('should emit "checking" then "down" with a business message when the endpoint returns ok=false', async () => {
     // Subscribe immediately to capture the synchronous startWith(...) emission
     // before the HTTP response is flushed.
-    const emissionsPromise = firstValueFrom(
-      service.apiHealthCheck$.pipe(take(2), toArray())
-    );
+    const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
     const req = httpMock.expectOne('/api/health');
     expect(req.request.method).toBe('GET');
@@ -73,9 +69,7 @@ describe('HealthService', () => {
   it('should emit "checking" then "down" with the error message when the HTTP request fails', async () => {
     // Subscribe immediately to capture the synchronous startWith(...) emission
     // before the HTTP response is flushed.
-    const emissionsPromise = firstValueFrom(
-      service.apiHealthCheck$.pipe(take(2), toArray())
-    );
+    const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
     const req = httpMock.expectOne('/api/health');
     expect(req.request.method).toBe('GET');
@@ -99,12 +93,8 @@ describe('HealthService', () => {
   it('should share the latest value and perform a single HTTP call (shareReplay(1))', async () => {
     // Subscribe twice before flushing the HTTP response.
     // shareReplay(1) must ensure a single HTTP call is performed.
-    const firstSubscription = firstValueFrom(
-      service.apiHealthCheck$.pipe(take(2), toArray())
-    );
-    const secondSubscription = firstValueFrom(
-      service.apiHealthCheck$.pipe(take(2), toArray())
-    );
+    const firstSubscription = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
+    const secondSubscription = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
     const req = httpMock.expectOne('/api/health');
     expect(req.request.method).toBe('GET');
@@ -112,10 +102,7 @@ describe('HealthService', () => {
 
     req.flush({ ok: true });
 
-    const [first, second] = await Promise.all([
-      firstSubscription,
-      secondSubscription,
-    ]);
+    const [first, second] = await Promise.all([firstSubscription, secondSubscription]);
 
     expect(first).toEqual<ApiHealthCheckView[]>([
       { isChecking: true, isUp: false, failureMessage: null },

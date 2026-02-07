@@ -17,24 +17,26 @@ export class HealthService {
   readonly apiHealthCheck$: Observable<ApiHealthCheckView> = this.http
     .get<ApiHealthResponse>('/api/health')
     .pipe(
-      map(({ ok }): ApiHealthCheckView => ({
-        isChecking: false,
-        isUp: ok === true,
-        failureMessage: ok ? null : 'Health endpoint returned ok=false',
-      })),
-      catchError((err): Observable<ApiHealthCheckView> =>
-        of<ApiHealthCheckView>({
+      map(
+        ({ ok }): ApiHealthCheckView => ({
           isChecking: false,
-          isUp: false,
-          failureMessage: err?.message ?? 'Unknown error',
-        })
+          isUp: ok === true,
+          failureMessage: ok ? null : 'Health endpoint returned ok=false',
+        }),
+      ),
+      catchError(
+        (err): Observable<ApiHealthCheckView> =>
+          of<ApiHealthCheckView>({
+            isChecking: false,
+            isUp: false,
+            failureMessage: err?.message ?? 'Unknown error',
+          }),
       ),
       startWith<ApiHealthCheckView>({
         isChecking: true,
         isUp: false,
         failureMessage: null,
       }),
-      shareReplay(1)
+      shareReplay(1),
     );
-
 }

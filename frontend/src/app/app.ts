@@ -2,10 +2,8 @@ import { AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Observable, catchError, map, of, startWith } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HealthService } from '../services/health.service';
-
-type ApiHealthResponse = { ok: boolean };
 
 type ApiHealthCheckView = {
   isChecking: boolean;

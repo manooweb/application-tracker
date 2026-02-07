@@ -2,10 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-
-use App\Health\HealthChecker;
 use App\Health\DefaultHealthChecker;
+use App\Health\HealthChecker;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

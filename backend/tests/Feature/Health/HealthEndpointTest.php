@@ -29,11 +29,12 @@ final class HealthEndpointTest extends TestCase
     }
 
     /**
-     * @param array{ok: bool, message?: string} $result
+     * @param  array{ok: bool, message?: string}  $result
      */
     private function bindHealthChecker(array $result): void
     {
-        $this->app->bind(HealthChecker::class, fn () => new class($result) implements HealthChecker {
+        $this->app->bind(HealthChecker::class, fn () => new class($result) implements HealthChecker
+        {
             public function __construct(private array $result) {}
 
             public function check(): array

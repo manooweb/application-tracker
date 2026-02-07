@@ -1,0 +1,29 @@
+{
+  "name": "application-tracker",
+  "version": "1.0.0",
+  "description": "job application tracker (Laravel + Angular + PostgreSQL)",
+  "keywords": [
+    "application",
+    "tracker"
+  ],
+  "homepage": "https://github.com/manooweb/application-tracker#readme",
+  "bugs": {
+    "url": "https://github.com/manooweb/application-tracker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manooweb/application-tracker.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "manooweb",
+  "type": "commonjs",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test:api": "cd bruno && npx bru run e2e",
+    "test:api:ci": "cd bruno && npx bru run e2e --env-vars=baseUrl=http://127.0.0.1:8000"
+  },
+  "dependencies": {
+    "@usebruno/cli": "^2.15.1"
+  }
+}

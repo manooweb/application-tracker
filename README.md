@@ -1,5 +1,7 @@
 # Application Tracker
 
+[![License](https://img.shields.io/github/license/manooweb/application-tracker?style=flat-square)](https://github.com/manooweb/application-tracker/blob/main/LICENSE)
+
 Application Tracker is an open-source web app to help candidates track their job applications as a simple pipeline.
 
 ## Tech Stack

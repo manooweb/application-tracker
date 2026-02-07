@@ -37,10 +37,20 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Create .env for CI
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=testing
+          APP_DEBUG=false
+          APP_URL=http://localhost
+          LOG_CHANNEL=stderr
+          CACHE_STORE=array
+          SESSION_DRIVER=array
+          QUEUE_CONNECTION=sync
+          EOF
+
       - name: Generate application key
         run: php artisan key:generate
-        env:
-          APP_ENV: testing
 
       - name: Run backend QA (Pint + Larastan + PHPUnit)
         run: composer qa

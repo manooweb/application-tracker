@@ -39,18 +39,17 @@ jobs:
 
       - name: Create .env for CI
         run: |
-          cat > .env <<'EOF'
+          APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+          cat > .env <<EOF
           APP_ENV=testing
           APP_DEBUG=false
           APP_URL=http://localhost
+          APP_KEY=$APP_KEY
           LOG_CHANNEL=stderr
           CACHE_STORE=array
           SESSION_DRIVER=array
           QUEUE_CONNECTION=sync
           EOF
-
-      - name: Generate application key
-        run: php artisan key:generate
 
       - name: Run backend QA (Pint + Larastan + PHPUnit)
         run: composer qa

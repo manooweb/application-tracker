@@ -1,0 +1,81 @@
+name: Bruno API E2E Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: bruno-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure storage and cache directories are writable
+        run: |
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+          chmod -R ug+rwx storage bootstrap/cache
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Create .env for CI
+        run: |
+          APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+          cat > .env <<EOF
+          APP_ENV=testing
+          APP_DEBUG=false
+          APP_URL=http://localhost
+          APP_KEY=$APP_KEY
+          LOG_CHANNEL=stderr
+          CACHE_STORE=array
+          SESSION_DRIVER=array
+          QUEUE_CONNECTION=sync
+          EOF
+
+      - name: Start Laravel server
+        working-directory: backend
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel-server.log 2>&1 &
+          echo $! > /tmp/laravel-server.pid
+
+      - name: Wait for Laravel to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/up > /dev/null; then
+              echo "Laravel is up"
+              exit 0
+            fi
+            echo "Waiting for Laravel... ($i/30)"
+            sleep 1
+          done
+          echo "Laravel did not become ready in time"
+          echo "Laravel server log:"
+          cat /tmp/laravel-server.log || true
+          exit 1
+
+      - name: Install dependencies
+        working-directory: ${{ github.workspace }}
+        run: npm ci
+
+      - name: Run Bruno API test
+        working-directory: ${{ github.workspace }}
+        run: npm run test:api:ci

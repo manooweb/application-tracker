@@ -21,7 +21,7 @@
   "private": true,
   "scripts": {
     "test:api": "cd bruno && npx bru run e2e",
-    "test:api:ci": "cd bruno && npx bru run e2e --env-vars=baseUrl=http://127.0.0.1:8000"
+    "test:api:ci": "cd bruno && npx bru run e2e --env-var=baseUrl=http://127.0.0.1:8000"
   },
   "dependencies": {
     "@usebruno/cli": "^2.15.1"

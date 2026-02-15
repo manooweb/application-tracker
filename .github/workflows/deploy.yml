@@ -1,0 +1,141 @@
+name: Deploy to o2s (job + job-api)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+
+    env:
+      SSH_HOST: ${{ secrets.O2S_SSH_HOST }}
+      SSH_USER: ${{ secrets.O2S_SSH_USER }}
+      FRONT_PATH: ${{ secrets.O2S_FRONT_PATH }}
+      BACK_PATH: ${{ secrets.O2S_BACK_PATH }}
+      ANGULAR_DIST_DIR: frontend/dist
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- Build FRONT ----------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & build Angular
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Resolve Angular dist folder
+        id: ngdist
+        run: |
+          set -euo pipefail
+          # Angular outputs to frontend/dist/<app-name>/ by default.
+          # We pick the first directory under dist.
+          DIST_ROOT="frontend/dist"
+          APP_DIR="$(find "$DIST_ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          if [ -z "${APP_DIR:-}" ]; then
+            echo "No Angular dist folder found under $DIST_ROOT" >&2
+            exit 1
+          fi
+          echo "dist_dir=$APP_DIR" >> "$GITHUB_OUTPUT"
+          echo "Angular dist dir: $APP_DIR"
+
+      # ---------- Build BACK ----------
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer install (prod)
+        working-directory: backend
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      # ---------- SSH config (like your local) ----------
+      - name: Start ssh-agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.O2S_SSH_PRIVATE_KEY }}
+
+      - name: Add known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Create SSH config alias (Host manooweb)
+        run: |
+          cat >> ~/.ssh/config <<EOF
+          Host o2s
+              HostName ${SSH_HOST}
+              User ${SSH_USER}
+              IdentityFile ~/.ssh/id_ed25519
+              IdentitiesOnly yes
+              StrictHostKeyChecking yes
+          EOF
+          # Note: IdentityFile path is irrelevant because ssh-agent is used,
+          # but keeping it matches your local mental model.
+
+      # ---------- Maintenance gate ----------
+      - name: Put API in maintenance (artisan down)
+        run: |
+          ssh o2s "set -e;
+            if [ -f ${BACK_PATH}/artisan ]; then
+              cd ${BACK_PATH} && php artisan down --render=errors::503 || true
+            else
+              echo 'No artisan yet on server (first deploy?) -> skipping down'
+            fi
+          "
+
+      # ---------- Deploy BACK (B2 rsync) ----------
+      - name: Deploy backend to o2switch (rsync)
+        run: |
+          rsync -az --delete --delay-updates \
+            --no-owner --no-group --no-perms \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='storage/' \
+            --exclude='tests/' \
+            --exclude='node_modules/' \
+            --exclude='.phpunit.result.cache' \
+            backend/ o2s:${BACK_PATH}/
+
+      - name: Run migrations
+        run: |
+          ssh o2s "set -e;
+            cd ${BACK_PATH};
+            php artisan migrate --force
+          "
+
+      # ---------- Deploy FRONT (B2 rsync) ----------
+      - name: Deploy frontend dist to o2switch (rsync)
+        run: |
+          rsync -az --delete --delay-updates \
+            --no-owner --no-group --no-perms \
+            ${{ steps.ngdist.outputs.dist_dir }}/ o2s:${FRONT_PATH}/
+
+      # ---------- End maintenance ----------
+      - name: Bring API back up (artisan up)
+        run: |
+          ssh o2s "set -e;
+            if [ -f ${BACK_PATH}/artisan ]; then
+              cd ${BACK_PATH} && php artisan up
+            fi
+          "

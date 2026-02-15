@@ -1,10 +1,8 @@
 name: Deploy to o2s (job + job-api)
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
-
 concurrency:
   group: deploy-main
   cancel-in-progress: false

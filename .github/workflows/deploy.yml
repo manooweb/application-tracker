@@ -82,18 +82,18 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
 
+      - name: Test SSH connection
+        run: ssh -vvv o2s "whoami && hostname"
+
       - name: Create SSH config alias (Host manooweb)
         run: |
           cat >> ~/.ssh/config <<EOF
           Host o2s
               HostName ${SSH_HOST}
               User ${SSH_USER}
-              IdentityFile ~/.ssh/id_ed25519
               IdentitiesOnly yes
               StrictHostKeyChecking yes
           EOF
-          # Note: IdentityFile path is irrelevant because ssh-agent is used,
-          # but keeping it matches your local mental model.
 
       # ---------- Maintenance gate ----------
       - name: Put API in maintenance (artisan down)

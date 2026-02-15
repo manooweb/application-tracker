@@ -10,11 +10,9 @@ concurrency:
 jobs:
   deploy:
     environment: prod
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     env:
-      SSH_HOST: ${{ secrets.O2S_SSH_HOST }}
-      SSH_USER: ${{ secrets.O2S_SSH_USER }}
       FRONT_PATH: ${{ secrets.O2S_FRONT_PATH }}
       BACK_PATH: ${{ secrets.O2S_BACK_PATH }}
       ANGULAR_DIST_DIR: frontend/dist
@@ -71,34 +69,10 @@ jobs:
         run: |
           composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
-      # ---------- SSH config (like your local) ----------
-      - name: Start ssh-agent and add key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.O2S_SSH_PRIVATE_KEY }}
-
-      - name: Add known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        run: ssh -vvv o2s "whoami && hostname"
-
-      - name: Create SSH config alias (Host manooweb)
-        run: |
-          cat >> ~/.ssh/config <<EOF
-          Host o2s
-              HostName ${SSH_HOST}
-              User ${SSH_USER}
-              IdentitiesOnly yes
-              StrictHostKeyChecking yes
-          EOF
-
       # ---------- Maintenance gate ----------
       - name: Put API in maintenance (artisan down)
         run: |
-          ssh o2s "set -e;
+          ssh gha-o2s "set -e;
             if [ -f ${BACK_PATH}/artisan ]; then
               cd ${BACK_PATH} && php artisan down --render=errors::503 || true
             else
@@ -119,11 +93,11 @@ jobs:
             --exclude='tests/' \
             --exclude='node_modules/' \
             --exclude='.phpunit.result.cache' \
-            backend/ o2s:${BACK_PATH}/
+            backend/ gha-o2s:${BACK_PATH}/
 
       - name: Run migrations
         run: |
-          ssh o2s "set -e;
+          ssh gha-o2s "set -e;
             cd ${BACK_PATH};
             php artisan migrate --force
           "
@@ -133,12 +107,12 @@ jobs:
         run: |
           rsync -az --delete --delay-updates \
             --no-owner --no-group --no-perms \
-            ${{ steps.ngdist.outputs.dist_dir }}/ o2s:${FRONT_PATH}/
+            ${{ steps.ngdist.outputs.dist_dir }}/ gha-o2s:${FRONT_PATH}/
 
       # ---------- End maintenance ----------
       - name: Bring API back up (artisan up)
         run: |
-          ssh o2s "set -e;
+          ssh gha-o2s "set -e;
             if [ -f ${BACK_PATH}/artisan ]; then
               cd ${BACK_PATH} && php artisan up
             fi

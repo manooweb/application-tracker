@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpRequest, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { take, toArray } from 'rxjs/operators';
@@ -31,7 +31,8 @@ describe('HealthService', () => {
     // before the HTTP response is flushed.
     const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
-    const req = httpMock.expectOne('/api/health');
+    const isHealthEndpoint = (req: HttpRequest<unknown>) => req.url.endsWith('/api/health');
+    const req = httpMock.expectOne(isHealthEndpoint);
     expect(req.request.method).toBe('GET');
 
     req.flush({ ok: true });
@@ -49,7 +50,8 @@ describe('HealthService', () => {
     // before the HTTP response is flushed.
     const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
-    const req = httpMock.expectOne('/api/health');
+    const isHealthEndpoint = (req: HttpRequest<unknown>) => req.url.endsWith('/api/health');
+    const req = httpMock.expectOne(isHealthEndpoint);
     expect(req.request.method).toBe('GET');
 
     req.flush({ ok: false });
@@ -71,7 +73,8 @@ describe('HealthService', () => {
     // before the HTTP response is flushed.
     const emissionsPromise = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
-    const req = httpMock.expectOne('/api/health');
+    const isHealthEndpoint = (req: HttpRequest<unknown>) => req.url.endsWith('/api/health');
+    const req = httpMock.expectOne(isHealthEndpoint);
     expect(req.request.method).toBe('GET');
 
     req.flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
@@ -96,9 +99,10 @@ describe('HealthService', () => {
     const firstSubscription = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
     const secondSubscription = firstValueFrom(service.apiHealthCheck$.pipe(take(2), toArray()));
 
-    const req = httpMock.expectOne('/api/health');
+    const isHealthEndpoint = (req: HttpRequest<unknown>) => req.url.endsWith('/api/health');
+    const req = httpMock.expectOne(isHealthEndpoint);
     expect(req.request.method).toBe('GET');
-    httpMock.expectNone('/api/health');
+    httpMock.expectNone(isHealthEndpoint);
 
     req.flush({ ok: true });
 

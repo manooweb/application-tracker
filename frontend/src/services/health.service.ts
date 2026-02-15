@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, shareReplay, startWith } from 'rxjs';
+import { API_BASE_URL } from '../app/app.config';
 
 type ApiHealthResponse = { ok: boolean };
 
@@ -15,7 +16,7 @@ export class HealthService {
   private readonly http = inject(HttpClient);
 
   readonly apiHealthCheck$: Observable<ApiHealthCheckView> = this.http
-    .get<ApiHealthResponse>('/api/health')
+    .get<ApiHealthResponse>(`${API_BASE_URL}/api/health`)
     .pipe(
       map(
         ({ ok }): ApiHealthCheckView => ({

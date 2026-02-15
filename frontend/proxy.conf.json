@@ -1,7 +1,0 @@
-{
-  "/api": {
-    "target": "https://application-tracker.ddev.site",
-    "secure": false,
-    "changeOrigin": true
-  }
-}

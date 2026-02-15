@@ -21,6 +21,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Diagnostics (env + php + composer)
+        run: |
+          set -euxo pipefail
+          whoami
+          id
+          pwd
+          echo "PATH=$PATH"
+          command -v php || true
+          ls -l "$(command -v php)" || true
+          php -v || true
+          command -v php8.4 || true
+          php8.4 -v || true
+          command -v composer || true
+          composer -V || true
+
       - name: Ensure storage and cache directories are writable
         working-directory: backend
         run: |
@@ -81,7 +96,7 @@ jobs:
           "
 
       # ---------- Deploy BACK (B2 rsync) ----------
-      - name: Deploy backend to o2switch (rsync)
+      - name: Deploy backend to o2s (rsync)
         run: |
           rsync -az --delete --delay-updates \
             --no-owner --no-group --no-perms \
@@ -103,7 +118,7 @@ jobs:
           "
 
       # ---------- Deploy FRONT (B2 rsync) ----------
-      - name: Deploy frontend dist to o2switch (rsync)
+      - name: Deploy frontend dist to o2s (rsync)
         run: |
           rsync -az --delete --delay-updates \
             --no-owner --no-group --no-perms \

@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ensure storage and cache directories are writable
+        working-directory: backend
         run: |
           mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
           chmod -R ug+rwx storage bootstrap/cache

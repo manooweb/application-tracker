@@ -16,6 +16,7 @@ jobs:
       FRONT_PATH: ${{ secrets.O2S_FRONT_PATH }}
       BACK_PATH: ${{ secrets.O2S_BACK_PATH }}
       ANGULAR_DIST_DIR: frontend/dist
+      RSYNC_RSH: "ssh -o BatchMode=yes"
 
     steps:
       - name: Checkout
@@ -25,16 +26,10 @@ jobs:
         run: |
           set -euxo pipefail
           whoami
-          id
-          pwd
-          echo "PATH=$PATH"
-          command -v php || true
-          ls -l "$(command -v php)" || true
-          php -v || true
-          command -v php8.4 || true
-          php8.4 -v || true
-          command -v composer || true
-          composer -V || true
+          node -v
+          npm -v
+          php -v
+          composer -V
 
       - name: Ensure storage and cache directories are writable
         working-directory: backend
@@ -43,42 +38,33 @@ jobs:
           chmod -R ug+rwx storage bootstrap/cache
 
       # ---------- Build FRONT ----------
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
       - name: Install & build Angular
         working-directory: frontend
         run: |
           npm ci
           npm run build
 
-      - name: Resolve Angular dist folder
+      - name: Resolve Angular dist folder (browser-aware)
         id: ngdist
         run: |
           set -euo pipefail
-          # Angular outputs to frontend/dist/<app-name>/ by default.
-          # We pick the first directory under dist.
           DIST_ROOT="frontend/dist"
           APP_DIR="$(find "$DIST_ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
           if [ -z "${APP_DIR:-}" ]; then
             echo "No Angular dist folder found under $DIST_ROOT" >&2
             exit 1
           fi
-          echo "dist_dir=$APP_DIR" >> "$GITHUB_OUTPUT"
-          echo "Angular dist dir: $APP_DIR"
+
+          if [ -d "$APP_DIR/browser" ]; then
+            DEPLOY_DIR="$APP_DIR/browser"
+          else
+            DEPLOY_DIR="$APP_DIR"
+          fi
+
+          echo "dist_dir=$DEPLOY_DIR" >> "$GITHUB_OUTPUT"
+          echo "Angular deploy dir: $DEPLOY_DIR"
 
       # ---------- Build BACK ----------
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.4"
-          tools: composer:v2
-          coverage: none
-
       - name: Composer install (prod)
         working-directory: backend
         run: |

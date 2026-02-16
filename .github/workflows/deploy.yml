@@ -90,10 +90,19 @@ jobs:
             --exclude='.github/' \
             --exclude='.env' \
             --exclude='.env.*' \
+            --exclude='.env.example' \
             --exclude='storage/' \
             --exclude='tests/' \
             --exclude='node_modules/' \
             --exclude='.phpunit.result.cache' \
+            --exclude='phpunit.xml' \
+            --exclude='phpstan.neon' \
+            --exclude='pint.json' \
+            --exclude='README.md' \
+            --exclude='.editorconfig' \
+            --exclude='.gitattributes' \
+            --exclude='package.json' \
+            --exclude='vite.config.js' \
             backend/ gha-o2s:${BACK_PATH}/
 
       - name: Run migrations
@@ -108,6 +117,7 @@ jobs:
         run: |
           rsync -az --delete --delay-updates \
             --no-owner --no-group --no-perms \
+            --exclude='.htaccess' \
             ${{ steps.ngdist.outputs.dist_dir }}/ gha-o2s:${FRONT_PATH}/
 
       # ---------- End maintenance ----------

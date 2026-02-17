@@ -1,4 +1,4 @@
-name: Deploy to o2s (job + job-api)
+name: Deploy online
 
 on:
   push:

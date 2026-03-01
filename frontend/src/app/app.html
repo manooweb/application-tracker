@@ -1,20 +1,20 @@
 <main class="main">
-  <h1>Application Tracker</h1>
-
-  @let apiHealth = apiHealthCheck$ | async;
-
-  @if (apiHealth?.isChecking) {
-    <p>Checking API…</p>
-  } @else if (apiHealth?.isUp) {
-    <p style="color: green">✅ API OK</p>
-  } @else {
-    <p style="color: red">
-      ❌ API KO
-      @if (apiHealth?.failureMessage) {
-        — {{ apiHealth?.failureMessage }}
-      }
-    </p>
-  }
+  <h1><a routerLink="/">Application Tracker</a></h1>
 </main>
 
-<router-outlet />
+<div class="app-container">
+  <router-outlet />
+</div>
+
+<footer class="app-footer">
+  <div class="app-footer__inner">
+    <span class="app-footer__muted">
+      © {{ copyrightStartYear }} - {{ copyrightEndYear }} Manooweb
+    </span>
+    <nav class="app-footer__links" aria-label="Legal links">
+      <a routerLink="/legal-notice">{{ 'legal.legalNotice.link.label' | translate }}</a>
+      <span class="app-footer__muted">•</span>
+      <a routerLink="/privacy-policy">{{ 'legal.privacyPolicy.link.label' | translate }}</a>
+    </nav>
+  </div>
+</footer>

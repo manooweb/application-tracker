@@ -1,0 +1,14 @@
+@let apiHealth = apiHealthCheck$ | async;
+
+@if (apiHealth?.isChecking) {
+  <p>Checking API…</p>
+} @else if (apiHealth?.isUp) {
+  <p style="color: green">✅ API OK</p>
+} @else {
+  <p style="color: red">
+    ❌ API KO
+    @if (apiHealth?.failureMessage) {
+      — {{ apiHealth?.failureMessage }}
+    }
+  </p>
+}

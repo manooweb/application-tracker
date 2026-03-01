@@ -1,25 +1,15 @@
-import { AsyncPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { Observable } from 'rxjs';
-import { HealthService } from '../services/health.service';
-
-type ApiHealthCheckView = {
-  isChecking: boolean;
-  isUp: boolean;
-  failureMessage: string | null;
-};
+import { Component } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { TranslatePipe } from './shared/i18n/translate.pipe';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AsyncPipe],
+  imports: [RouterOutlet, RouterLink, TranslatePipe],
   templateUrl: './app.html',
+  styleUrl: './app.scss',
 })
 export class App {
-  private readonly http = inject(HttpClient);
-  private readonly HealthService = inject(HealthService);
-
-  readonly apiHealthCheck$: Observable<ApiHealthCheckView> = this.HealthService.apiHealthCheck$;
+  protected readonly copyrightStartYear = 2025;
+  protected readonly copyrightEndYear = new Date().getFullYear();
 }

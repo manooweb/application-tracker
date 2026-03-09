@@ -59,8 +59,7 @@ export class LegalPageComponent implements AfterViewInit, OnDestroy {
     // Nettoie le conteneur
     target.innerHTML = '';
 
-    const src =
-      `https://stats.manooweb.fr/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=${this.lang}&backgroundColor=FFFFFF&fontColor=000000&fontSize=12px&fontFamily=Arial&showIntro=1`;
+    const src = `https://stats.manooweb.fr/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=${this.lang}&backgroundColor=FFFFFF&fontColor=000000&fontSize=12px&fontFamily=Arial&showIntro=1`;
 
     // IMPORTANT: in SPA, script must be run again
     // So we remove any existing script with the same src before adding a new one

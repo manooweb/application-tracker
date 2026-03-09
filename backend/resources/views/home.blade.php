@@ -8,6 +8,7 @@
     <title>{{ __('home.title') }}</title>
 
     <link rel="stylesheet" href="{{ asset('css/home.css') }}">
+    <script src="{{ asset('js/matomo-api.js') }}" defer></script>
 </head>
 
 <body>

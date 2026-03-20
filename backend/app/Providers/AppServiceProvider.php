@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use App\Health\DefaultHealthChecker;
-use Illuminate\Support\Facades\URL;
 use App\Health\HealthChecker;
+use Illuminate\Support\Facades\URL;
+use App\Health\DefaultHealthChecker;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

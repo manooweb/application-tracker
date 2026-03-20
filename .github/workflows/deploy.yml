@@ -1,130 +1,39 @@
-name: Deploy online
+name: Deploy application tracker to VPS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
 concurrency:
-  group: deploy-main
-  cancel-in-progress: false
+  group: deploy-application-tracker-main
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    environment: prod
-    runs-on: self-hosted
-
-    env:
-      FRONT_PATH: ${{ secrets.O2S_FRONT_PATH }}
-      BACK_PATH: ${{ secrets.O2S_BACK_PATH }}
-      ANGULAR_DIST_DIR: frontend/dist
-      RSYNC_RSH: "ssh -o BatchMode=yes"
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
 
-      - name: Diagnostics (env + php + composer)
+      - name: Add VPS to known_hosts
         run: |
-          set -euxo pipefail
-          whoami
-          node -v
-          npm -v
-          php -v
-          composer -V
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.VPS_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: Ensure storage and cache directories are writable
-        working-directory: backend
+      - name: Run backend deployment script on VPS
         run: |
-          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-          chmod -R ug+rwx storage bootstrap/cache
+          ssh -p "${{ secrets.VPS_PORT }}" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/docker/apps/job-backend && ./scripts/deploy.sh"
 
-      # ---------- Build FRONT ----------
-      - name: Install & build Angular
-        working-directory: frontend
+      - name: Run frontend deployment script on VPS
         run: |
-          npm ci
-          npm run build
-
-      - name: Resolve Angular dist folder (browser-aware)
-        id: ngdist
-        run: |
-          set -euo pipefail
-          DIST_ROOT="frontend/dist"
-          APP_DIR="$(find "$DIST_ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-          if [ -z "${APP_DIR:-}" ]; then
-            echo "No Angular dist folder found under $DIST_ROOT" >&2
-            exit 1
-          fi
-
-          if [ -d "$APP_DIR/browser" ]; then
-            DEPLOY_DIR="$APP_DIR/browser"
-          else
-            DEPLOY_DIR="$APP_DIR"
-          fi
-
-          echo "dist_dir=$DEPLOY_DIR" >> "$GITHUB_OUTPUT"
-          echo "Angular deploy dir: $DEPLOY_DIR"
-
-      # ---------- Build BACK ----------
-      - name: Composer install (prod)
-        working-directory: backend
-        run: |
-          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
-
-      # ---------- Maintenance gate ----------
-      - name: Put API in maintenance (artisan down)
-        run: |
-          ssh gha-o2s "set -e;
-            if [ -f ${BACK_PATH}/artisan ]; then
-              cd ${BACK_PATH} && php artisan down --render=errors::503 || true
-            else
-              echo 'No artisan yet on server (first deploy?) -> skipping down'
-            fi
-          "
-
-      # ---------- Deploy BACK (B2 rsync) ----------
-      - name: Deploy backend to o2s (rsync)
-        run: |
-          rsync -az --delete --delay-updates \
-            --no-owner --no-group --no-perms \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='.env' \
-            --exclude='.env.*' \
-            --exclude='.env.example' \
-            --exclude='storage/' \
-            --exclude='tests/' \
-            --exclude='node_modules/' \
-            --exclude='.phpunit.result.cache' \
-            --exclude='phpunit.xml' \
-            --exclude='phpstan.neon' \
-            --exclude='pint.json' \
-            --exclude='README.md' \
-            --exclude='.editorconfig' \
-            --exclude='.gitattributes' \
-            --exclude='package.json' \
-            --exclude='vite.config.js' \
-            backend/ gha-o2s:${BACK_PATH}/
-
-      - name: Run migrations
-        run: |
-          ssh gha-o2s "set -e;
-            cd ${BACK_PATH};
-            php artisan migrate --force
-          "
-
-      # ---------- Deploy FRONT (B2 rsync) ----------
-      - name: Deploy frontend dist to o2s (rsync)
-        run: |
-          rsync -az --delete --delay-updates \
-            --no-owner --no-group --no-perms \
-            --exclude='.htaccess' \
-            ${{ steps.ngdist.outputs.dist_dir }}/ gha-o2s:${FRONT_PATH}/
-
-      # ---------- End maintenance ----------
-      - name: Bring API back up (artisan up)
-        run: |
-          ssh gha-o2s "set -e;
-            if [ -f ${BACK_PATH}/artisan ]; then
-              cd ${BACK_PATH} && php artisan up
-            fi
-          "
+          ssh -p "${{ secrets.VPS_PORT }}" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/docker/apps/job-frontend && ./scripts/deploy.sh"

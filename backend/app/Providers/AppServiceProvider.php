@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Health\DefaultHealthChecker;
+use Illuminate\Support\Facades\URL;
 use App\Health\HealthChecker;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Event::listen(DiagnosingHealth::class, SimulateAppDown::class);
+        URL::forceScheme('https');
     }
 }

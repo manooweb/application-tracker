@@ -30,7 +30,7 @@ jobs:
         run: |
           ssh -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd /opt/docker/apps/job-backend && ./scripts/deploy.sh"
+            "cd /opt/docker/apps/job-api && ./scripts/deploy.sh"
 
       - name: Run frontend deployment script on VPS
         run: |
